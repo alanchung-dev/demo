@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 機密（絕不上傳）
+credentials.json
+*勿上傳*
+.streamlit/secrets.toml
+
+# 本機
+.claude/
+.DS_Store

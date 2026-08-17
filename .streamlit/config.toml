@@ -1,0 +1,14 @@
+# 鎖定白藍淺色主題（統一顯示，不跟隨裝置深色）。
+[theme]
+primaryColor             = "#2E75B6"
+backgroundColor          = "#F5F7FA"
+secondaryBackgroundColor = "#FFFFFF"
+textColor                = "#333333"
+font                     = "sans serif"
+
+[server]
+maxUploadSize = 10
+enableCORS = false
+
+[browser]
+gatherUsageStats = false
