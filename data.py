@@ -21,7 +21,7 @@ from field_map import (
     RAW_TAB_NAME_PATTERNS, RELEASE_GID, FROZEN_QUARTERS,
 )
 
-# ── DEMO / 作品集版：合成假資料（不連任何外部服務）──────────────────────────
+# ── DEMO 展示版：合成假資料（不連任何外部服務）──────────────────────────
 try:
     from field_map import MOCK
 except ImportError:
@@ -74,8 +74,8 @@ SAMPLE: dict[str, str] = {
     "s1_prev_hotfix": "0",     "s1_prev_fl_bug": "0", "s1_prev_fl_feat": "0",
     "s1_cur_rollback": "0",    "s1_cur_delay": "0",
     "s1_prev_rollback": "0",   "s1_prev_delay": "0",
-    "s1_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s1_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s1_obs": "（範例文字：本區為展示版佔位說明）",
+    "s1_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 二、2.1 團隊專項(Roadmap_Item)
     "s21_cur_total_req": "24",  "s21_prev_total_req": "23",
@@ -96,8 +96,8 @@ SAMPLE: dict[str, str] = {
     "s22_cur_avg_owner": "0.00","s22_cur_avg_support": "0.00","s22_cur_avg_total": "0.00",
     "s22_prev_avg_owner": "1.91","s22_prev_avg_support": "0.00","s22_prev_avg_total": "1.91",
     "s22_avg_qoq_owner": "-100.00%", "s22_avg_qoq_total": "-100.00%",
-    "s2_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s2_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s2_obs": "（範例文字：本區為展示版佔位說明）",
+    "s2_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 二、2.3 UED
     "s23_cur_total": "0",       "s23_cur_prd_cnt": "0",   "s23_cur_prd_rate": "-",
@@ -116,8 +116,8 @@ SAMPLE: dict[str, str] = {
     "s24_prev_done_owner": "3", "s24_prev_done_support": "4","s24_prev_done_total": "7",
     "s24_prev_ratio_owner": "25.00%","s24_prev_ratio_support": "36.36%","s24_prev_ratio_total": "30.43%",
     "s24_prev_target_owner":"-","s24_prev_target_support":"-","s24_prev_target_total": "53.85%",
-    "s23_s24_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s23_s24_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s23_s24_obs": "（範例文字：本區為展示版佔位說明）",
+    "s23_s24_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 二、2.5 顆粒度
     "s25_cur_eng_dev": "4.89",  "s25_cur_eng_pre": "0.00",  "s25_cur_eng_nc": "2.56",  "s25_cur_eng_total": "7.44",
@@ -154,8 +154,8 @@ SAMPLE: dict[str, str] = {
     "s3_cur_12w_o": "66.67%","s3_cur_12w_s": "25.00%","s3_cur_12w_t": "42.86%",
     "s3_prev_12w_o": "33.33%","s3_prev_12w_s": "33.33%","s3_prev_12w_t": "33.33%",
     "s3_diff_12w_o": "33.33%","s3_diff_12w_s": "-8.33%","s3_diff_12w_t": "9.52%",
-    "s3_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s3_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s3_obs": "（範例文字：本區為展示版佔位說明）",
+    "s3_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 四、非專項
     "s4_cur_bug": "5",    "s4_cur_feat": "21",   "s4_cur_total": "26",
@@ -168,8 +168,8 @@ SAMPLE: dict[str, str] = {
     "s4_cur_qa_tp_bug": "4.55","s4_cur_qa_tp_feat": "19.09","s4_cur_qa_tp_total": "23.64",
     "s4_prev_qa_tp_bug": "3.40","s4_prev_qa_tp_feat": "31.70","s4_prev_qa_tp_total": "35.09",
     "s4_qoq_qa_tp_bug": "33.84%","s4_qoq_qa_tp_feat": "-39.77%","s4_qoq_qa_tp_total": "-32.65%",
-    "s4_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s4_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s4_obs": "（範例文字：本區為展示版佔位說明）",
+    "s4_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 五、週期
     "s51_cur_prd_avg": "32.50","s51_cur_prd_med": "無有效值",
@@ -209,8 +209,8 @@ SAMPLE: dict[str, str] = {
     "s52_prev_wait_qa": "0","s52_prev_qa": "1.00","s52_prev_total": "52.80",
     "s52_qoq_wait_dev": "-3.93%","s52_qoq_dev": "-20.60%",
     "s52_qoq_wait_qa": "-","s52_qoq_qa": "-","s52_qoq_total": "-20.13%",
-    "s51_s52_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s51_s52_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s51_s52_obs": "（範例文字：本區為展示版佔位說明）",
+    "s51_s52_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 六、工作天
     "s6_cur_eng_a": "1.82","s6_cur_eng_b": "1.72","s6_cur_eng_ab": "3.54",
@@ -225,8 +225,8 @@ SAMPLE: dict[str, str] = {
     "s6_qa_loss_c": "0.00","s6_qa_loss_d": "0.00","s6_qa_loss_e": "0.00","s6_qa_loss_total": "-3.03",
     "s6_adj_qa_a": "-3.03","s6_adj_qa_b": "0.00","s6_adj_qa_ab": "-3.03",
     "s6_adj_qa_c": "0.00","s6_adj_qa_d": "0.30","s6_adj_qa_e": "0.00","s6_adj_qa_total": "-2.73",
-    "s6_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s6_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s6_obs": "（範例文字：本區為展示版佔位說明）",
+    "s6_focus": "（範例文字：本區為展示版佔位說明）",
     "s62_eng_story": "112.25","s62_eng_fix": "6.50","s62_eng_sf": "118.75",
     "s62_eng_task": "28.00","s62_eng_survey": "0.00","s62_eng_defect": "0.00","s62_eng_total": "146.75",
     "s62_eng_avg_story": "4.64","s62_eng_avg_fix": "0.27","s62_eng_avg_sf": "4.91",
@@ -235,8 +235,8 @@ SAMPLE: dict[str, str] = {
     "s62_qa_task": "1.00","s62_qa_survey": "0.00","s62_qa_defect": "0.00","s62_qa_total": "1.35",
     "s62_qa_avg_story": "0.03","s62_qa_avg_fix": "0.08","s62_qa_avg_sf": "0.11",
     "s62_qa_avg_task": "0.30","s62_qa_avg_survey": "0.00","s62_qa_avg_defect": "0.00","s62_qa_avg_total": "0.41",
-    "s62_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s62_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s62_obs": "（範例文字：本區為展示版佔位說明）",
+    "s62_focus": "（範例文字：本區為展示版佔位說明）",
     # 六 隔季首月上線預覽（輔助）
     "s6next_month": "", "s6next_count": "0",
     "s6next_eng_story": "0.00","s6next_eng_fix": "0.00","s6next_eng_sf": "0.00","s6next_eng_task": "0.00","s6next_eng_survey": "0.00","s6next_eng_defect": "0.00","s6next_eng_total": "0.00",
@@ -247,14 +247,14 @@ SAMPLE: dict[str, str] = {
     "s7_m2_pm": "1.75","s7_m2_be": "7.29","s7_m2_fe": "1.10","s7_m2_ios": "0.00","s7_m2_qa": "1.10","s7_m2_ratio": "1:4.8:0.6",
     "s7_m3_pm": "1.50","s7_m3_be": "6.58","s7_m3_fe": "1.10","s7_m3_ios": "0.00","s7_m3_qa": "0.80","s7_m3_ratio": "1:5.1:0.5",
     "s7_q_pm": "1.67","s7_q_be": "6.96","s7_q_fe": "1.10","s7_q_ios": "0.00","s7_q_qa": "1.10","s7_q_ratio": "1:4.8:0.7",
-    "s7_obs": "（範例文字：本區為作品集展示版佔位說明）",
-    "s7_focus": "（範例文字：本區為作品集展示版佔位說明）",
+    "s7_obs": "（範例文字：本區為展示版佔位說明）",
+    "s7_focus": "（範例文字：本區為展示版佔位說明）",
 
     # 八、報告總結
-    "s8_pm_ued": "（範例文字：本區為作品集展示版佔位說明）",
-    "s8_rd": "（範例文字：本區為作品集展示版佔位說明）",
-    "s8_qa": "（範例文字：本區為作品集展示版佔位說明）",
-    "s8_pmo": "（範例文字：本區為作品集展示版佔位說明）",
+    "s8_pm_ued": "（範例文字：本區為展示版佔位說明）",
+    "s8_rd": "（範例文字：本區為展示版佔位說明）",
+    "s8_qa": "（範例文字：本區為展示版佔位說明）",
+    "s8_pmo": "（範例文字：本區為展示版佔位說明）",
 
     # 九、參考資料
     "s9_link_dashboard": "(請填入人效看板連結)",
@@ -267,7 +267,7 @@ SAMPLE: dict[str, str] = {
 _DEMO_NARRATIVE = {"s8_pm_ued", "s8_rd", "s8_qa", "s8_pmo"}
 for _k in list(SAMPLE):
     if _k.endswith("_obs"):
-        SAMPLE[_k] = "本季各項指標觀察詳見上方數據與圖表（作品集展示版範例文字）。"
+        SAMPLE[_k] = "本季各項指標觀察詳見上方數據與圖表（展示版範例文字）。"
     elif _k.endswith("_focus"):
         SAMPLE[_k] = "關注重點：持續改善交付週期與資料完整度（範例文字）。"
     elif _k in _DEMO_NARRATIVE:
@@ -847,10 +847,10 @@ def _fetch_roadmap(quarter: str) -> "pd.DataFrame | None":
         return None
 
 
-# ─── 一、季度發版情形（主檔「SL1.0 上版紀錄」tab）────────────────────────────
+# ─── 一、季度發版情形（主檔「上版紀錄」tab）────────────────────────────
 @st.cache_data(ttl=300, show_spinner=False)
 def _fetch_release() -> "pd.DataFrame | None":
-    """讀主檔「SL1.0 上版紀錄」tab（RELEASE_GID），header = Row 0。"""
+    """讀主檔「上版紀錄」tab（RELEASE_GID），header = Row 0。"""
     if MOCK:
         return _mock.release_df()
     return _tab_df(RELEASE_GID, header=0)
@@ -863,7 +863,7 @@ def _release_quarter_str(quarter: str) -> str:
 
 def compute_s1(team: str, cur_q: str, prev_q: str) -> dict[str, str]:
     """
-    一、季度發版情形：從「SL1.0 上版紀錄」tab 取該隊本季 / 上季的 7 項發版統計。
+    一、季度發版情形：從「上版紀錄」tab 取該隊本季 / 上季的 7 項發版統計。
     欄位固定順序（第 4~10 欄，0-indexed 3~9）：
       3 預期常規發頻率 4 常規版本頻率 5 Hotfix 6 Fastlane-Bug 7 Fastlane-Feat 8 版本回滾 9 延遲上版
     找不到該隊該季的列時，該側（cur/prev）欄位留空字串。
@@ -2445,7 +2445,7 @@ def load_data(
     designated = bool(team) and ((quarter, team) in _fetch_index())
 
     if team and designated:
-        # 一、季度發版情形（主檔「SL1.0 上版紀錄」tab）
+        # 一、季度發版情形（主檔「上版紀錄」tab）
         try:
             s1 = compute_s1(team, quarter, prev_q)
             if s1:
@@ -2597,6 +2597,12 @@ def load_data(
         year, qnum = quarter[:4], quarter[5]
         merged["YEAR"]    = year
         merged["QUARTER"] = qnum
+        if MOCK:
+            # 展示版：表頭日期隨所選季度變動（資料截止＝季末、報告日期＝季末後一週）
+            from datetime import timedelta
+            _q_end = quarter_to_dates(quarter)[1]
+            merged["DATA_CUTOFF_DATE"] = _q_end.strftime("%Y-%m-%d")
+            merged["REPORT_DATE"] = (_q_end + timedelta(days=7)).strftime("%Y-%m-%d")
 
     return merged, is_live
 

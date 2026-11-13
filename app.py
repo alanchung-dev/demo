@@ -7,6 +7,7 @@ import streamlit as st
 import plotly.graph_objects as go
 from data import load_data, get, quarter_label, get_prd_items, get_public_holidays, get_data_quality, get_delivery_weeks, get_delivery_trend_monthly, get_delivery_accuracy, build_report_assistant, is_quarter_designated, get_roadmap_items, get_s51_items, get_s51_scatter, get_s3_smoke_items, get_s52_outliers, S52_OBS_THRESHOLD, frozen_date, snapshot_time
 from field_map import TEAM_NAMES, AVAILABLE_QUARTERS, DEFAULT_QUARTER
+from auth import require_login, logout_button
 
 # ─── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -15,6 +16,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# ─── 登入閘門：需以 Google 帳號登入（不限網域）──────────────────────────────────
+require_login()
+logout_button()
 
 # ─── Global CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
@@ -405,12 +410,12 @@ with st.sidebar:
         st.caption(f"「{selected_team} {selected_quarter}」尚無資料，\n顯示樣本資料")
     else:
         st.caption("未連接 Google Sheets，\n顯示樣本資料")
-    st.caption("🧪 這是作品集展示版，資料為合成假資料（不連任何外部服務）。")
+    st.caption("🧪 展示版：資料為合成範例資料，不連任何外部服務。")
 
 
 # ─── Report Header ────────────────────────────────────────────────────────────
 badge_html = (
-    '<span class="live-badge">● DEMO — 合成範例資料（作品集展示版）</span>'
+    '<span class="live-badge">● DEMO — 合成範例資料（展示版）</span>'
     if is_live else
     (f'<span class="demo-badge">● DEMO — 「{selected_team} {selected_quarter}」尚無資料（樣本資料）</span>'
      if selected_team and not designated else

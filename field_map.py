@@ -1,5 +1,5 @@
 """
-field_map.py — DEMO / 作品集版設定檔
+field_map.py — DEMO 展示版設定檔
 
 ⚠️ 這是「去識別化 + 假資料」的公開展示版：
    - 不連任何 Google Sheet、不需憑證。
@@ -11,18 +11,15 @@ field_map.py — DEMO / 作品集版設定檔
 MOCK = True   # True = 使用合成假資料（離線，公開展示用）
 
 # ── 團隊（虛構）────────────────────────────────────────────────────────────────
+# 展示版只放 1 個團隊；要多放幾隊，往這個清單加名稱即可（假資料會自動產生）。
 TEAM_NAMES: list[str] = [
     "Team Aurora",
-    "Team Borealis",
-    "Team Cascade",
-    "Team Delta",
-    "Team Everest",
-    "Team Falcon",
 ]
 
 # ── 可選季度 ──────────────────────────────────────────────────────────────────
-AVAILABLE_QUARTERS: list[str] = ["2025Q4", "2026Q1"]
-DEFAULT_QUARTER = "2026Q1"
+# 展示版放 2 季；每季的「上季」對比資料由 mock_data 自動補齊。
+AVAILABLE_QUARTERS: list[str] = ["2026Q2", "2026Q3"]
+DEFAULT_QUARTER = "2026Q3"
 
 # ── 以下為原架構所需的設定名稱；DEMO 版皆為空/虛值（MOCK 模式不會用到）──────────
 SHEET_ID = "DEMO"

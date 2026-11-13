@@ -1,12 +1,13 @@
 """
-mock_data.py — 合成假資料產生器（DEMO / 作品集版）
+mock_data.py — 合成假資料產生器（DEMO 展示版）
 
-不連任何外部服務，全部在記憶體產生。數值以 (team, quarter) 為種子 → 每次重整結果穩定。
+不連任何外部服務，全部在記憶體產生。數值以 (team, quarter) 為種子 → 每次重整、每次重啟結果都相同。
 產出的 DataFrame 欄位刻意對齊原架構的 Raw Data / 人力 / 發版 / Roadmap 結構，
 因此上層所有 compute_* / get_* 函式無須改動即可運作。
 """
 from __future__ import annotations
 import random
+import zlib
 from datetime import date, timedelta
 import pandas as pd
 
@@ -22,7 +23,20 @@ def _q_dates(q: str) -> tuple[date, date]:
 
 
 def _seed(*parts) -> random.Random:
-    return random.Random(abs(hash("|".join(map(str, parts)))) % (2**32))
+    # 用 crc32 而非內建 hash()：內建字串 hash 每次啟動都會變，數字會跟著重啟跳動。
+    return random.Random(zlib.crc32("|".join(map(str, parts)).encode("utf-8")))
+
+
+def _prev_q(q: str) -> str:
+    y, n = int(q[:4]), int(q[5])
+    return f"{y - 1}Q4" if n == 1 else f"{y}Q{n - 1}"
+
+
+def _data_quarters() -> list[str]:
+    """要產資料的季度＝可選季度 + 最早一季的上季（供「上季」對比用，不出現在選單）。"""
+    qs = list(AVAILABLE_QUARTERS)
+    first_prev = _prev_q(qs[0])
+    return [first_prev] + qs if first_prev not in qs else qs
 
 
 _FEATURES = [
@@ -138,6 +152,11 @@ def _child_row(rng, k, issue_type, item_type, team, quarter, r):
     dev_e = dev_s + timedelta(days=rng.randint(1, 10))
     t_s = dev_e + timedelta(days=rng.randint(0, 4))
     t_e = t_s + timedelta(days=rng.randint(1, 8))
+    # 部分非專項 Story 帶設計稿（2.3「小卡稿」才有資料）；多數在開發開始前交付，少數之後
+    mk_s = mk_c = ""
+    if item_type == "Small_Ticket" and issue_type == "Story" and rng.random() < 0.4:
+        mc = dev_s - timedelta(days=rng.choices([rng.randint(1, 6), -rng.randint(1, 3)], [0.8, 0.2])[0])
+        mk_s, mk_c = _d(mc - timedelta(days=rng.randint(2, 7))), _d(mc)
     return {
         "Key": k, "Summary": rng.choice(_FEATURES),
         "Issue Type": issue_type, "Item Type": item_type,
@@ -148,7 +167,7 @@ def _child_row(rng, k, issue_type, item_type, team, quarter, r):
         "PRD/TRD Preparing Start Date": "", "PRD/TRD Internal Review End Date": "",
         "PRD/TRD Review Start Date": "", "PRD/TRD Review Final Date": "",
         "PRD/TRD Brief Date": "", "Implementation Date": "",
-        "Mockup Preparing Start Date": "", "Mockup Complete Date": "",
+        "Mockup Preparing Start Date": mk_s, "Mockup Complete Date": mk_c,
         "Development Start Date": _maybe(rng, _d(dev_s), .1),
         "Development End Date": _maybe(rng, _d(dev_e), .15),
         "To Be Functional Tested Date": _maybe(rng, _d(dev_e), .2),
@@ -172,7 +191,7 @@ def index_set() -> dict:
 # ── 在職人力 ──────────────────────────────────────────────────────────────────
 def headcount_df() -> pd.DataFrame:
     rows = []
-    for q in AVAILABLE_QUARTERS:
+    for q in _data_quarters():
         y, n = int(q[:4]), int(q[5])
         for mo in range((n - 1) * 3 + 1, n * 3 + 1):
             label = f"{y}年{mo}月"
@@ -186,7 +205,7 @@ def headcount_df() -> pd.DataFrame:
 # ── 季度發版情形 ──────────────────────────────────────────────────────────────
 def release_df() -> pd.DataFrame:
     rows = []
-    for q in AVAILABLE_QUARTERS:
+    for q in _data_quarters():
         tstr = f"{q[:4]}年{q[4:]}"
         for t in TEAM_NAMES:
             rng = _seed(t, q, "rel")

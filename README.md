@@ -1,7 +1,8 @@
 # Team Efficiency Report — Dashboard (Demo)
 
 > 一個以 **Streamlit + Plotly** 打造的「團隊人效季度報告」互動式儀表板。
-> 本 repo 為**作品集展示版**:所有資料皆為**合成假資料**、不連任何外部服務、團隊與專案名皆為虛構。
+> 本 repo 為**展示版(demo)**:所有資料皆為**合成假資料**、不連任何外部服務、團隊與專案名皆為虛構。
+> 展示範圍:**1 個團隊 × 2 個季度**(2026 Q2、Q3);需以 **Google 帳號登入**(不限網域)才能查看。
 
 **🔗 Live demo:** _(部署後填入 Streamlit Community Cloud 連結)_
 
@@ -9,7 +10,7 @@
 
 ## 這個專案在做什麼
 
-把原本散落在試算表、需要人工彙整的季度團隊效能數據,自動化成一份**多團隊、多季度、九章節**的互動報告:
+把原本散落在試算表、需要人工彙整的季度團隊效能數據,自動化成一份**多團隊、多季度、九章節**的互動報告(展示版只放 1 隊 2 季):
 
 | 章節 | 內容 |
 |---|---|
@@ -38,15 +39,37 @@
 ## 本機執行
 ```bash
 pip install -r requirements.txt
+cp .streamlit/secrets.toml.example .streamlit/secrets.toml   # 再填入 Google OAuth 設定
 streamlit run app.py
 ```
+
+沒有 `.streamlit/secrets.toml` 的 `[auth]` 設定時,畫面會停在「登入尚未設定」(刻意設計:不會退回成免登入)。
+
+## Google 登入設定(不限網域)
+
+1. Google Cloud Console → Google Auth Platform → **Audience**:User type 選 **External**,Publishing status 設為 **In production**。
+   (Internal 只允許自己組織的帳號;Testing 狀態只有列入 Test users 的帳號能登入。)
+2. **Clients** → 建一組 OAuth 2.0 Client(Web application),在「已授權的重新導向 URI」加入:
+   - `http://localhost:8501/oauth2callback`(本機)
+   - `https://<展示站網址>/oauth2callback`(部署後)
+3. 把 `client_id`、`client_secret`、`redirect_uri`、`cookie_secret` 填進 `.streamlit/secrets.toml`(本機)與 Streamlit Cloud 的 Secrets(線上)。範本見 `.streamlit/secrets.toml.example`。
+4. 只要 `openid`、`email`、`profile` 這三個基本範圍,不需要 Google 審核。
+
+要限制誰能看:在 `auth.py` 填 `ALLOWED_EMAILS` 或 `ALLOWED_DOMAINS`;兩者留空 = 任何 Google 帳號都能登入。
+
+## 調整展示範圍
+
+- 團隊與季度:`field_map.py` 的 `TEAM_NAMES`、`AVAILABLE_QUARTERS`、`DEFAULT_QUARTER`。加名稱或季度即可,假資料會自動產生。
+- 假資料以「團隊 + 季度」為種子,每次重整、重啟數字都相同;要換一批數字就改 `mock_data.py` 的產生規則。
 
 ## 檔案結構
 ```
 app.py         # Streamlit 版面與各章節呈現
+auth.py        # Google 登入閘門(不限網域,可選白名單)
 data.py        # 資料抓取層 + 指標計算(compute_*/get_*)
 field_map.py   # 設定(團隊、季度、DEMO 開關)
 mock_data.py   # 合成假資料產生器(展示用)
+.streamlit/secrets.toml.example   # 登入設定範本(真正的 secrets.toml 不進 repo)
 ```
 
 ---
