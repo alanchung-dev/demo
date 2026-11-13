@@ -913,7 +913,7 @@ def compute_s21(team: str, cur_q: str, prev_q: str) -> dict[str, str]:
     預估目標達成比例 = Raw 實際完成 ÷ Roadmap 預估完成。
     本季無對應外部檔則回 {}（保留 SAMPLE，不覆蓋）。
     """
-    if not _roadmap_file_id(cur_q):
+    if not MOCK and not _roadmap_file_id(cur_q):
         return {}
 
     import pandas as pd
@@ -2751,3 +2751,179 @@ def build_report_assistant(data: dict, team: str, quarter: str) -> dict:
     out["七"] = g
 
     return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 每季啟動專項回顧（PMO 週報 × Roadmap 指標，規則式綜合分析）
+# ═══════════════════════════════════════════════════════════════════════════════
+# 週報「Roadmap 總表」欄位（第 0 列為表頭；0-based，A=0）：
+#   C(2)=項目名稱  F(5)=Priority  J(9)=解決方案卡 Key  T(19)=本季期望目標
+#   AA(26)=項目當前狀態  AB(27)=季初預估風險  AC(28)=本季達標風險  AD(29)=最終達標風險
+#   AF(31)=最新預期交付日  AH(33)起=各團隊角色欄（Owner / Support / Consult）
+#   BJ(61)~BV(73)=每週 Weekly Highlights（13 週）
+_WEEKLY_TEAM_COLS = list(TEAM_NAMES)   # 對應 AH(33) 起算的團隊欄順序
+_WEEKLY_OWNER_COL0 = 33   # AH
+_WEEKLY_WK_COL0 = 61      # BJ
+_WEEKLY_WK_COUNT = 13     # BJ..BV
+
+_COL_NAME, _COL_KEY = 2, 9
+_COL_PRIORITY = 5        # Highest=P0、High=P1
+_COL_GOAL = 19           # 本季期望目標（5 上線 / 3 開發完成 / 0 下季啟動…）
+_COL_STATUS = 26
+_COL_RISK_INIT = 27      # 季初預估達標風險（鎖定）
+_COL_RISK_Q = 28         # 本季目標達標風險（每週更新）← 主判斷
+_COL_RISK_FINAL = 29     # 最終目標達標風險（每週更新）← 輔助
+_COL_NEWDATE = 31
+_DELIVERED = {"Released", "Done", "To Be Deployed", "Deploying"}
+_RISK_LV = {"Safe": 0, "At-Risk": 1, "Dangerous": 2, "No Way": 3}
+_RISK_INVALID = {"計算錯誤", "Please Update", ""}
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def _fetch_weekly_rows(quarter: str):
+    """當季週報『Roadmap 總表』原始列（含表頭）。展示版為合成資料；無資料 → None。"""
+    if MOCK:
+        return _mock.weekly_rows(quarter)
+    return None
+
+
+def _classify_weekly(status: str, latest: str) -> str:
+    """依『項目當前狀態』+『最新一週週報』分類啟動狀況。"""
+    s = (status or "").strip().lower()
+    t = (latest or "").strip()
+    tl = t.lower()
+    if "released" in s or any(k in t for k in ("已上線", "已完成", "上線完成", "完成上線", "項目已完成", "項目已上線")):
+        return "done"
+    if any(k in t for k in ("q4", "下季", "遞延", "重新評估", "重新排", "重排", "延後", "暫緩")):
+        return "deferred"
+    if any(k in t for k in ("卡", "延遲", "風險", "阻塞", "受阻", "blocked")):
+        return "risk"
+    if "to do" in s or any(k in t for k in ("尚未啟動", "未啟動", "尚未開始", "尚未排")):
+        return "notstarted"
+    if any(k in t for k in ("進行", "開發中", "測試", "評審", "eta", "預計", "migration", "beta", "施工", "上線中", "準備")) \
+       or "eta" in tl:
+        return "progress"
+    return "other"
+
+
+def _explained(text: str) -> bool:
+    """週報是否有實質說明（非空、非 '-'）。"""
+    return bool(text) and text.strip() not in ("-", "")
+
+
+@st.cache_data(ttl=86400, show_spinner=False)
+def get_quarterly_review(team: str, quarter: str, metrics: "dict | None" = None) -> dict:
+    """
+    規則式『每季啟動專項回顧』。母體＝該隊為 Owner 的 Roadmap 專項。
+    觀點 A（本季執行）：優先看 P0(Highest)，無 P0 才看 P1(High)；以「本季目標達標風險」為主，
+      結合 本季期望目標 vs 現況、週報治理品質，分為 肯定／受控追蹤／待釐清。
+    觀點 B（預判能力）：季初預估風險 vs 本季實際風險 落差 ≥2 級，且週報無說明 → 預判待檢討。
+    回傳 dict；available=False 代表本季無週報資料。
+    """
+    metrics = metrics or {}
+    rows = _fetch_weekly_rows(quarter)
+    if not rows:
+        return {"available": False, "reason": "no_weekly"}
+    if team not in _WEEKLY_TEAM_COLS:
+        return {"available": False, "reason": "team_not_in_sheet"}
+
+    ocol = _WEEKLY_OWNER_COL0 + _WEEKLY_TEAM_COLS.index(team)
+    header = rows[0] if rows else []
+    week_labels = []
+    for i in range(_WEEKLY_WK_COUNT):
+        ci = _WEEKLY_WK_COL0 + i
+        lab = (header[ci] if len(header) > ci else "").replace("Weekly Highlights", "").replace("\n", " ").strip()
+        week_labels.append(lab or f"W{i+1}")
+
+    def _cell(row, i):
+        return (row[i] if len(row) > i else "").strip()
+
+    items = []
+    for row in rows[1:]:
+        name = _cell(row, _COL_NAME)
+        if not name or _cell(row, ocol).lower() != "owner":
+            continue
+        wk = [_cell(row, _WEEKLY_WK_COL0 + i) for i in range(_WEEKLY_WK_COUNT)]
+        nonempty = [(week_labels[i], wk[i]) for i in range(_WEEKLY_WK_COUNT) if wk[i]]
+        lw, lt = nonempty[-1] if nonempty else ("", "")
+        goal = _cell(row, _COL_GOAL)
+        status = _cell(row, _COL_STATUS)
+        # 本季達標落差判定
+        if goal.startswith("0"):
+            deliv = "下季啟動"
+        elif status in _DELIVERED:
+            deliv = "已交付"
+        else:
+            deliv = "落後"
+        items.append({
+            "name": name, "key": _cell(row, _COL_KEY),
+            "priority": _cell(row, _COL_PRIORITY), "goal": goal, "status": status,
+            "risk_q": _cell(row, _COL_RISK_Q), "risk_init": _cell(row, _COL_RISK_INIT),
+            "risk_final": _cell(row, _COL_RISK_FINAL), "new_date": _cell(row, _COL_NEWDATE),
+            "latest_week": lw, "latest_text": lt, "weeks_filled": len(nonempty),
+            "deliv": deliv, "bucket": _classify_weekly(status, lt),
+        })
+
+    if not items:
+        return {"available": False, "reason": "no_owner_items"}
+
+    from collections import Counter
+    cnt = Counter(it["bucket"] for it in items)
+    counts = {k: cnt.get(k, 0) for k in ("done", "progress", "notstarted", "deferred", "risk", "other")}
+    counts["total"] = len(items)
+
+    # 決定重點母體：先 P0(Highest)，無則 P1(High)
+    p0 = [it for it in items if it["priority"] == "Highest"]
+    p1 = [it for it in items if it["priority"] == "High"]
+    if p0:
+        focus, focus_label, focus_items = "P0", "P0（Highest）", p0
+    elif p1:
+        focus, focus_label, focus_items = "P1", "P1（High）", p1
+    else:
+        focus, focus_label, focus_items = "—", "（本隊無 P0/P1 專項）", []
+
+    # ── 觀點 A：本季執行（肯定／受控追蹤／待釐清）──
+    catA = {"肯定": [], "受控追蹤": [], "待釐清": []}
+    for it in focus_items:
+        if it["deliv"] == "下季啟動":
+            continue   # 本季無目標，不評
+        if it["deliv"] == "已交付":
+            catA["肯定"].append(it)
+        else:  # 落後
+            if it["risk_q"] in _RISK_INVALID or not _explained(it["latest_text"]):
+                catA["待釐清"].append(it)       # 風險未同步 或 週報無說明
+            else:
+                catA["受控追蹤"].append(it)      # 有說明＋風險已揭露
+
+    # ── 觀點 B：預判能力（季初 vs 本季 風險落差 ≥2 級）──
+    catB = []
+    for it in focus_items:
+        ri, rq = it["risk_init"], it["risk_q"]
+        if ri in _RISK_LV and rq in _RISK_LV:
+            gap = _RISK_LV[rq] - _RISK_LV[ri]
+            if abs(gap) >= 2:
+                it2 = dict(it)
+                it2["gap"] = gap
+                it2["direction"] = "惡化（季初低估風險）" if gap > 0 else "高估（季初過於保守）"
+                it2["flag"] = "預判待檢討" if not _explained(it["latest_text"]) else "可接受（週報有說明）"
+                catB.append(it2)
+
+    return {
+        "available": True, "focus": focus, "focus_label": focus_label,
+        "focus_count": len(focus_items), "counts": counts,
+        "catA": catA, "catB": catB, "items": items, "notes": [],
+    }
+
+
+@st.cache_data(ttl=600, show_spinner=False)
+def get_pregen_review(quarter: str) -> "dict | None":
+    """『團隊本季綜合回顧分析』敘事。原架構為定期預生成後存檔；展示版依合成資料套句型產生。"""
+    if not MOCK:
+        return None
+    from datetime import timedelta
+    teams = {}
+    for t in TEAM_NAMES:
+        metrics, _ = load_data(t, quarter)
+        teams[t] = _mock.review_narrative(t, quarter, get_quarterly_review(t, quarter), metrics)
+    gen = quarter_to_dates(quarter)[1] + timedelta(days=7)
+    return {"quarter": quarter, "generated_at": gen.strftime("%Y-%m-%d"), "teams": teams}

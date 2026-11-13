@@ -5,7 +5,7 @@ app.py — 人效報告 Streamlit 主應用
 
 import streamlit as st
 import plotly.graph_objects as go
-from data import load_data, get, quarter_label, get_prd_items, get_public_holidays, get_data_quality, get_delivery_weeks, get_delivery_trend_monthly, get_delivery_accuracy, build_report_assistant, is_quarter_designated, get_roadmap_items, get_s51_items, get_s51_scatter, get_s3_smoke_items, get_s52_outliers, S52_OBS_THRESHOLD, frozen_date, snapshot_time
+from data import load_data, get, quarter_label, get_prd_items, get_public_holidays, get_data_quality, get_delivery_weeks, get_delivery_trend_monthly, get_delivery_accuracy, build_report_assistant, is_quarter_designated, get_roadmap_items, get_s51_items, get_s51_scatter, get_s3_smoke_items, get_s52_outliers, S52_OBS_THRESHOLD, frozen_date, snapshot_time, get_quarterly_review, get_pregen_review
 from field_map import TEAM_NAMES, AVAILABLE_QUARTERS, DEFAULT_QUARTER
 from auth import require_login, logout_button
 
@@ -443,6 +443,94 @@ st.markdown(
 if section == "🏠 報告概覽":
     st.markdown("### 📌 報告小助手總結（各章重點）")
     render_assistant_summary(assistant)
+    st.markdown("---")
+
+    # ── 每季啟動專項回顧（PMO 週報 × Roadmap 指標，規則式綜合分析）──────────────
+    st.markdown("### 🚀 每季啟動專項回顧")
+    st.caption("以本隊為 Owner 的 Roadmap 專項為母體，結合 PMO 每週週報與交付指標，"
+               "從專案管理視角呈現實際啟動狀況。（展示版：專項與週報內容皆為合成範例）")
+    if not selected_team:
+        st.caption("請先在側邊欄選擇團隊。")
+    else:
+        _review = get_quarterly_review(selected_team, selected_quarter, dict(data))
+        if not _review.get("available"):
+            st.info(f"本季（{selected_quarter}）尚無 PMO 週報資料可整合。")
+        else:
+            _c = _review["counts"]
+            st.markdown(
+                f"本隊 Owner 專項 **{_c['total']}** 項　｜　"
+                f"✅ 上線 {_c['done']}　🔄 進行 {_c['progress']}　"
+                f"⏸️ 未啟動 {_c['notstarted']}　⚠️ 風險/遞延 {_c['risk'] + _c['deferred']}"
+            )
+            for _x in _review.get("notes", []):
+                st.caption("ℹ️ " + _x)
+
+            # ── 綜合回顧敘事 ──
+            _pg = get_pregen_review(selected_quarter)
+            _pgt = (_pg or {}).get("teams", {}).get(selected_team)
+            if _pgt:
+                st.markdown("#### 🧭 團隊本季綜合回顧分析")
+                st.caption(f"綜合 Roadmap 交付、Jira 數據與 PMO 週報整理；產生時間 {_pg.get('generated_at', '—')}（定期更新，非即時）")
+                _SEC = [("✨ 亮點", "highlights"), ("🔧 改善點", "improvements"), ("⚖️ 待釐清點", "clarify")]
+                for _title, _k in _SEC:
+                    _xs = _pgt.get(_k) or []
+                    if _xs:
+                        st.markdown(f"**{_title}**")
+                        for _x in _xs:
+                            st.markdown(f"- {_x}")
+                st.markdown("—— 以下為結構化佐證資料 ——")
+
+            def _line(it, short=60):
+                t = (it["latest_text"] or "").replace("\n", " ")
+                t = (t[:short] + "…") if len(t) > short else t
+                tail = f"｜最新({it['latest_week']})：{t}" if t else ""
+                return (f"**{it['name']}** — 目標 {it['goal'] or '—'} / 狀態 {it['status'] or '—'}"
+                        f" / 本季風險 {it['risk_q'] or '—'}{tail}")
+
+            # ── 觀點 A：本季執行（重點看 P0，無則 P1）──
+            st.markdown(f"#### 🎯 重點專項觀察 — {_review['focus_label']}")
+            if _review["focus_count"] == 0:
+                st.caption("本隊本季無 P0/P1 專項。")
+            else:
+                _A = _review["catA"]
+
+                def _cat_block(title, key, expanded):
+                    lst = _A[key]
+                    with st.expander(f"{title}（{len(lst)}）", expanded=expanded):
+                        if lst:
+                            for it in lst:
+                                st.markdown(f"- {_line(it)}")
+                        else:
+                            st.caption("—")
+
+                # 待釐清最重要→預設展開；肯定/受控追蹤較長→預設收合，點擊展開
+                _cat_block("⚠️ 待釐清（落後且無說明，或風險未同步）", "待釐清", True)
+                _cat_block("✅ 準時交付且資訊同步", "肯定", False)
+                _cat_block("⏳ 落後但受控（週報已說明原因／ETA／共識）", "受控追蹤", False)
+
+            # ── 觀點 B：預判能力（季初 vs 本季 風險落差 ≥2 級）──
+            st.markdown("#### 📈 季初預判落差（季初預估 vs 本季實際，≥2 級）")
+            if _review["catB"]:
+                for it in _review["catB"]:
+                    _mark = "⚠️" if it["flag"].startswith("預判待檢討") else "✓"
+                    st.markdown(
+                        f"- {_mark} **{it['name']}**：季初 {it['risk_init']} → 本季 {it['risk_q']}"
+                        f"（{it['direction']}）｜{it['flag']}")
+            else:
+                st.caption("無重大落差，季初預判與本季大致一致。")
+
+            with st.expander("📋 專項逐項啟動狀況（全部 Owner 專項・含最新週報）"):
+                import pandas as _pd
+                _PR = {"Highest": "P0", "High": "P1", "Medium": "P2", "Low": "P3"}
+                _df = _pd.DataFrame([
+                    {"優先級": _PR.get(it["priority"], it["priority"]),
+                     "項目": it["name"], "目標": it["goal"], "狀態": it["status"],
+                     "本季風險": it["risk_q"], "最終風險": it["risk_final"],
+                     "最新交付日": it["new_date"],
+                     "最新週": it["latest_week"], "最新週報": it["latest_text"]}
+                    for it in _review["items"]
+                ])
+                st.dataframe(_df, use_container_width=True, hide_index=True, height=380)
     st.markdown("---")
 
     st.markdown("### 本季重點數字")
